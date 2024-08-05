@@ -11,9 +11,4 @@ public class Server extends DatagramBase {
     public Server(String address, int port) throws IOException {
         super(address, port);
     }
-
-    @Override
-    protected void handlePacket(Message message) throws IOException {
-        super.handlePacket(message);
-    }
 }

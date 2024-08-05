@@ -86,18 +86,13 @@ public class DatagramBase {
             while(!isClosed()) {
                 Message message = getNextMessage();
                 if(message == null) continue;
-
-                try {
-                    handlePacket(message);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                handlePacket(message);
             }
         });
         thread.setName("PacketHandler");
         return thread;
     }
-    protected void handlePacket(Message message) throws IOException {}
+    protected void handlePacket(Message message)  {}
     private Thread createPacketListenerThread()  {
         Thread thread = new Thread(() -> {
             while(!isClosed()) {

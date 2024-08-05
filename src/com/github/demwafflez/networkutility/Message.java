@@ -8,9 +8,9 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Message  {
-    public static final int PACKET_PADDING = 16;
-    public static final int MAX_PACKET_SIZE = 1024;
-    public static final int MAX_ARRAY_SIZE = MAX_PACKET_SIZE - PACKET_PADDING;
+    public static final int PACKET_METADATA_SIZE = 16;
+    public static final int MAX_PACKET_SIZE = 4096;
+    public static final int MAX_ARRAY_SIZE = MAX_PACKET_SIZE - PACKET_METADATA_SIZE;
 
     public final long id;
 
@@ -39,7 +39,7 @@ public class Message  {
         if(index >= messageLength || data.length > MAX_ARRAY_SIZE) {
             throw new IllegalArgumentException("ERROR ADDING CHUNK");
         }
-        ByteBuffer buffer = ByteBuffer.allocate(data.length + PACKET_PADDING);
+        ByteBuffer buffer = ByteBuffer.allocate(data.length + PACKET_METADATA_SIZE);
         buffer.putLong(id);
         buffer.putInt(messageLength);
         buffer.putInt(index);
@@ -56,18 +56,21 @@ public class Message  {
 
         for(int i=0;i<messageLength;i++) {
             byte[] data = chunks.get(i);
+
             DatagramPacket packet = new DatagramPacket(data, data.length, address, port);
             socket.send(packet);
         }
     }
     public byte[] getRawData() {
         byte[] array = new byte[getTotalSize()];
-        int i = 0;
+        int index = 0;
 
-        for(byte[] byteArray : chunks.values()) {
-            int readLength = byteArray.length - PACKET_PADDING;
-            System.arraycopy(byteArray, PACKET_PADDING, array, i, readLength);
-            i += readLength;
+        for(int i=0;i<messageLength;i++) {
+            byte[] byteArray = chunks.get(i);
+
+            int readLength = byteArray.length - PACKET_METADATA_SIZE;
+            System.arraycopy(byteArray, PACKET_METADATA_SIZE, array, index, readLength);
+            index += readLength;
         }
         return array;
     }
@@ -80,8 +83,10 @@ public class Message  {
     public int getTotalSize() {
         int total = 0;
 
-        for(byte[] byteArray : chunks.values()) {
-            total += byteArray.length - PACKET_PADDING;
+        for(int i=0;i<messageLength;i++) {
+            byte[] byteArray = chunks.get(i);
+
+            total += byteArray.length - PACKET_METADATA_SIZE;
         }
         return total;
     }
